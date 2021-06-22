@@ -7,7 +7,10 @@ func NewGenerator() *Generator {
 }
 
 func (g *Generator) Fibonacci(val int) int {
-	return -1
+	if val <= 1 {
+		return val
+	}
+	return g.Fibonacci(val-1) + g.Fibonacci(val-2)
 }
 
 func (g *Generator) Memoized(val int) int {

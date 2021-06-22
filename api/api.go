@@ -25,7 +25,7 @@ func (h *Handler) GetFibonacci(w http.ResponseWriter, r *http.Request) {
 
 	intTerm, err := strconv.Atoi(term)
 	if err != nil {
-		http.Error(w, "Value must be an integer.", http.StatusBadRequest)
+		http.Error(w, "term must be an integer", http.StatusBadRequest)
 		return
 	}
 
@@ -35,7 +35,21 @@ func (h *Handler) GetFibonacci(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetMemoized(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "GetMemoized")
+	val := mux.Vars(r)["val"]
+
+	intVal, err := strconv.Atoi(val)
+	if err != nil {
+		http.Error(w, "value must be an integer", http.StatusBadRequest)
+		return
+	}
+
+	res, err := h.Generator.Memoized(intVal)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "There are %d memoized terms less than %d.", res, intVal)
 }
 
 func (h *Handler) ClearMemoized(w http.ResponseWriter, r *http.Request) {

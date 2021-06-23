@@ -47,5 +47,6 @@ func GetMemoized(w http.ResponseWriter, r *http.Request) {
 }
 
 func ClearMemoized(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "ClearMemoized")
+	fib.Clear()
+	fmt.Fprint(w, "ClearMemoized")
 }

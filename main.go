@@ -5,29 +5,22 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/bdavs3/fibonacci-generator/api"
-	"github.com/bdavs3/fibonacci-generator/fib"
-
 	"github.com/gorilla/mux"
+
+	"github.com/bdavs3/fibonacci-generator/api"
 )
 
 const port = "8080"
 
 func main() {
-	generator, err := fib.NewGenerator()
-	if err != nil {
-		log.Fatal(err)
-	}
-	handler := api.NewHandler(generator)
-
 	router := mux.NewRouter()
 
-	router.HandleFunc("/fib/{term}", handler.GetFibonacci).Methods(http.MethodGet)
-	router.HandleFunc("/memoized/{val}", handler.GetMemoized).Methods(http.MethodGet)
-	router.HandleFunc("/clear", handler.ClearMemoized).Methods(http.MethodDelete)
+	router.HandleFunc("/fib/{term}", api.GetFibonacci).Methods(http.MethodGet)
+	router.HandleFunc("/memoized/{val}", api.GetMemoized).Methods(http.MethodGet)
+	router.HandleFunc("/clear", api.ClearMemoized).Methods(http.MethodDelete)
 
 	fmt.Printf("Listening on %v...", port)
-	err = http.ListenAndServe(":"+port, router)
+	err := http.ListenAndServe(":"+port, router)
 	if err != nil {
 		log.Fatal(err)
 	}

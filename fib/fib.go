@@ -9,32 +9,38 @@ import (
 
 const url = "postgres://localhost:5432/mydatabase"
 
-type Generator struct {
-	Cache *pgx.Conn
-}
-
-func NewGenerator() (*Generator, error) {
+func Fibonacci(term int) (int, error) {
 	conn, err := pgx.Connect(context.Background(), url)
 	if err != nil {
-		return nil, err
+		return -1, err
 	}
 
-	return &Generator{
-		Cache: conn,
-	}, nil
-}
+	var val int
 
-func (g *Generator) Fibonacci(val int) int {
-	if val <= 1 {
-		return val
+	err = conn.QueryRow(
+		context.Background(),
+		fmt.Sprintf("SELECT val FROM fib_memo WHERE term = %d;", term),
+	).Scan(&val)
+	if err != nil { // No memoized value found
+		prev, _ := Fibonacci(term - 1)
+		prev2, _ := Fibonacci(term - 2)
+		result := prev + prev2
+		conn.Query(
+			context.Background(),
+			fmt.Sprintf("INSERT INTO fib_memo (term, val) VALUES (%d, %d);", term, result),
+		)
+
+		return result, nil
 	}
-	return g.Fibonacci(val-1) + g.Fibonacci(val-2)
+
+	return val, nil
 }
 
-func (g *Generator) Memoized(val int) (int, error) {
+func Memoized(val int) (int, error) {
 	var count int
 
-	err := g.Cache.QueryRow(
+	conn, _ := pgx.Connect(context.Background(), url)
+	err := conn.QueryRow(
 		context.Background(),
 		fmt.Sprintf("SELECT COUNT(*) FROM fib_memo WHERE val < %d;", val),
 	).Scan(&count)
@@ -45,6 +51,6 @@ func (g *Generator) Memoized(val int) (int, error) {
 	return count, nil
 }
 
-func (g *Generator) Clear() {
+func Clear() {
 
 }

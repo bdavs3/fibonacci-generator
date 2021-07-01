@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -51,8 +50,6 @@ func TestAPIRequest(t *testing.T) {
 
 	for _, test := range tests {
 		rec := httptest.NewRecorder()
-
-		fmt.Println(test.endpoint)
 
 		t.Run(test.comment, func(t *testing.T) {
 			req, err := http.NewRequest(

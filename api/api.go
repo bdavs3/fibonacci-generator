@@ -10,6 +10,18 @@ import (
 	"github.com/bdavs3/fibonacci-generator/fib"
 )
 
+const idMatch = "[0-9]+"
+
+func Router() *mux.Router {
+	r := mux.NewRouter()
+
+	r.HandleFunc("/fib/{term:"+idMatch+"}", GetFibonacci)
+	r.HandleFunc("/memoized/{val:"+idMatch+"}", GetMemoized)
+	r.HandleFunc("/clear", ClearMemoized)
+
+	return r
+}
+
 func GetFibonacci(w http.ResponseWriter, r *http.Request) {
 	term := mux.Vars(r)["term"]
 
@@ -25,7 +37,7 @@ func GetFibonacci(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "The %dth Fibonacci value is %d.", intTerm, res)
+	fmt.Fprintf(w, "Fibonacci term %d is %d.", intTerm, res)
 }
 
 func GetMemoized(w http.ResponseWriter, r *http.Request) {
@@ -48,5 +60,5 @@ func GetMemoized(w http.ResponseWriter, r *http.Request) {
 
 func ClearMemoized(w http.ResponseWriter, r *http.Request) {
 	fib.Clear()
-	fmt.Fprint(w, "ClearMemoized")
+	fmt.Fprint(w, "Memoized results cleared.")
 }

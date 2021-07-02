@@ -4,74 +4,47 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-const url = "postgres://localhost:5432/mydatabase"
-
-func Fibonacci(term int) (int, error) {
-	conn, err := pgx.Connect(context.Background(), url)
-	if err != nil {
-		return -1, err
-	}
-
+func Fibonacci(term int, conn *pgxpool.Pool) int {
 	var memoizedVal int
-
-	err = conn.QueryRow(
+	err := conn.QueryRow(
 		context.Background(),
 		fmt.Sprintf("SELECT val FROM fib_memo WHERE term = %d;", term),
 	).Scan(&memoizedVal)
 	if err != nil { // No memoized value found
 		if term <= 1 {
-			insertMemoized(conn, term, term)
-			return term, nil
+			insertMemoized(term, term, conn)
+			return term
 		}
 
-		// Can ignore the next two errors since connection has already been tested at this point
-		prev, _ := Fibonacci(term - 1)
-		prev2, _ := Fibonacci(term - 2)
-		result := prev + prev2
-		insertMemoized(conn, term, result)
+		result := Fibonacci(term-1, conn) + Fibonacci(term-2, conn)
+		insertMemoized(term, result, conn)
 
-		return result, nil
+		return result
 	}
 
-	return memoizedVal, nil
+	return memoizedVal
 }
 
-func insertMemoized(conn *pgx.Conn, term, val int) {
+func insertMemoized(term, val int, conn *pgxpool.Pool) {
 	conn.Query(
 		context.Background(),
 		fmt.Sprintf("INSERT INTO fib_memo (term, val) VALUES (%d, %d);", term, val),
 	)
 }
 
-func Memoized(val int) (int, error) {
-	conn, err := pgx.Connect(context.Background(), url)
-	if err != nil {
-		return -1, nil
-	}
-
+func Memoized(val int, conn *pgxpool.Pool) int {
 	var count int
-
-	err = conn.QueryRow(
+	conn.QueryRow(
 		context.Background(),
 		fmt.Sprintf("SELECT COUNT(*) FROM fib_memo WHERE val < %d;", val),
 	).Scan(&count)
-	if err != nil {
-		return -1, err
-	}
 
-	return count, nil
+	return count
 }
 
-func Clear() error {
-	conn, err := pgx.Connect(context.Background(), url)
-	if err != nil {
-		return err
-	}
-
+func Clear(conn *pgxpool.Pool) {
 	conn.Query(context.Background(), "DELETE FROM fib_memo;")
-
-	return nil
 }

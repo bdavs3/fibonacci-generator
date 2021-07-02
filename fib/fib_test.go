@@ -2,6 +2,8 @@ package fib
 
 import (
 	"testing"
+
+	"github.com/bdavs3/fibonacci-generator/db"
 )
 
 const fibMemoTerm = 6
@@ -40,10 +42,9 @@ func TestFibonacci(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.comment, func(t *testing.T) {
-			res, err := Fibonacci(test.term)
-			if err != nil {
-				t.Errorf("Error connecting to DB: %v", err)
-			}
+			conn := db.NewConnection()
+
+			res := Fibonacci(test.term, conn)
 
 			if res != test.want {
 				t.Errorf("got %d, want %d", res, test.want)
@@ -81,14 +82,10 @@ func TestMemoized(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.comment, func(t *testing.T) {
-			Clear()
+			Clear(db.NewConnection())
+			Fibonacci(fibMemoTerm, db.NewConnection())
 
-			_, err := Fibonacci(fibMemoTerm)
-			if err != nil {
-				t.Errorf("Error connecting to DB: %v", err)
-			}
-
-			res, _ := Memoized(test.val)
+			res := Memoized(test.val, db.NewConnection())
 			if res != test.want {
 				t.Errorf("got %d, want %d", res, test.want)
 			}
@@ -98,14 +95,10 @@ func TestMemoized(t *testing.T) {
 
 func TestClear(t *testing.T) {
 	t.Run("Clear cache", func(t *testing.T) {
-		_, err := Fibonacci(fibMemoTerm)
-		if err != nil {
-			t.Errorf("Error connecting to DB: %v", err)
-		}
+		Fibonacci(fibMemoTerm, db.NewConnection())
+		Clear(db.NewConnection())
 
-		Clear()
-
-		res, _ := Memoized(1000)
+		res := Memoized(1000, db.NewConnection())
 		if res != 0 {
 			t.Errorf("got %d, want %d", res, 0)
 		}

@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/bdavs3/fibonacci-generator/db"
 	"github.com/bdavs3/fibonacci-generator/fib"
@@ -14,29 +13,17 @@ import (
 
 const idMatch = "[0-9]+"
 
-type Handler struct {
-	Conn *pgxpool.Pool
-}
-
-func NewHandler(conn *pgxpool.Pool) *Handler {
-	return &Handler{
-		Conn: conn,
-	}
-}
-
 func Router() *mux.Router {
-	conn := db.NewConnection()
-	handler := NewHandler(conn)
 	router := mux.NewRouter()
 
-	router.HandleFunc("/fib/{term:"+idMatch+"}", handler.GetFibonacci)
-	router.HandleFunc("/memoized/{val:"+idMatch+"}", handler.GetMemoized)
-	router.HandleFunc("/clear", handler.ClearMemoized)
+	router.HandleFunc("/fib/{term:"+idMatch+"}", GetFibonacci)
+	router.HandleFunc("/memoized/{val:"+idMatch+"}", GetMemoized)
+	router.HandleFunc("/clear", ClearMemoized)
 
 	return router
 }
 
-func (h *Handler) GetFibonacci(w http.ResponseWriter, r *http.Request) {
+func GetFibonacci(w http.ResponseWriter, r *http.Request) {
 	term := mux.Vars(r)["term"]
 
 	intTerm, err := strconv.Atoi(term)
@@ -45,12 +32,12 @@ func (h *Handler) GetFibonacci(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := fib.Fibonacci(intTerm, h.Conn)
+	res := fib.Fibonacci(intTerm, db.NewConnection())
 
 	fmt.Fprintf(w, "Fibonacci term %d is %d.", intTerm, res)
 }
 
-func (h *Handler) GetMemoized(w http.ResponseWriter, r *http.Request) {
+func GetMemoized(w http.ResponseWriter, r *http.Request) {
 	val := mux.Vars(r)["val"]
 
 	intVal, err := strconv.Atoi(val)
@@ -59,12 +46,12 @@ func (h *Handler) GetMemoized(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := fib.Memoized(intVal, h.Conn)
+	res := fib.Memoized(intVal, db.NewConnection())
 
 	fmt.Fprintf(w, "There are %d memoized terms less than %d.", res, intVal)
 }
 
-func (h *Handler) ClearMemoized(w http.ResponseWriter, r *http.Request) {
-	fib.Clear(h.Conn)
+func ClearMemoized(w http.ResponseWriter, r *http.Request) {
+	fib.Clear(db.NewConnection())
 	fmt.Fprint(w, "Memoized results cleared.")
 }
